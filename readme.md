@@ -58,8 +58,31 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-### Run through Docker Container
-TODO
+### Run using Docker Container
+1. Clone the repository
+2. Create a `.env` file with your OpenAI API key (see next section)
+3. Build and run the Docker image using docker-compose:
+```bash 
+docker compose up -d
+```
+This will:
+- Build a Docker image based on the Dockerfile
+- Configure the container with proper environment variables from your `.env` file
+- Start the application in detached mode
+- Set up health checks to monitor application status
+- Make the application accessible at `http://localhost:8501`
+
+4. To stop the application, run:
+```bash
+docker compose down
+```
+
+5. To view logs:
+```bash
+docker compose logs -f
+```
+
+
 
 ### Configure environment with required API credentials
 Create a `.env` file in the root directory of the project with the following content:
@@ -68,34 +91,52 @@ Create a `.env` file in the root directory of the project with the following con
 OPENAI_APIKEY=your_openai_api_key
 ```
 
+The example of the `.env` file is provided in the repository as `.env.example`. Make sure to rename it to `.env` and fill in your OpenAI API key.
+
+When running with Docker, the `.env` file is automatically loaded via the `env_file` configuration in docker-compose.yml.
+
 ## System Architecture
 
 ```
 article_scraper/
 │
-├── app.py                  # Command-line interface and application entrypoint
+├── app.py                  # Streamlit web interface and application entrypoint
 ├── scraper.py              # Core extraction and processing engine
 ├── utils.py                # Document generation and asset management utilities
 ├── requirements.txt        # Dependencies manifest
 ├── .env                    # API configuration (git-ignored)
+├── .env.example            # Example environment configuration
+├── Dockerfile              # Container definition for Docker deployment
+├── docker-compose.yml      # Docker Compose configuration
+├── .dockerignore           # Files to exclude from Docker build
 └── README.md               # Documentation
 ```
 
-## Document Rendering Configuration
+## Containerization Approach
 
-The document rendering subsystem accepts the following configuration parameters:
+The application is containerized using Docker with the following architecture:
 
-```python
-MSWord.create_page_bordered_docx(
-    filename="output_document_path.docx",
-    title=structured_data.title,
-    content_blocks=structured_data.content_blocks,
-    border_color=(150, 42, 46),  # RGB color specification
-    border_width=200,            # Border width specification in points
-    header="Optional document header",
-    footer="Optional document footer"
-)
-```
+1. **Base Image**: Python 3.12 slim for a lightweight container footprint
+2. **Security**: Runs as a non-root user (appuser) with appropriate permissions
+3. **Dependency Management**: Two-stage copy for better caching of dependencies
+4. **Configuration**: Environment variables for application settings
+5. **Health Monitoring**: Container health checks to ensure application availability
+6. **Orchestration**: Docker Compose for easy deployment and service management
+
+This containerization approach ensures:
+- Consistent environments across development and production
+- Isolation from the host system
+- Easy deployment and scaling
+- Security through principle of least privilege
+- Simplified dependency management
+
+## TODO
+- [ ] Implement error handling when the user provides an invalid URL
+- [ ] Paywall detection and handling
+- [ ] Implement option for user to select size of the images in the document as well as other formatting options
+- [ ] Implement option for user to select the format of the document (PDF, DOCX, etc.)
+- [ ] Implement option for user to add extra prompts to the AI model to improve the extraction quality
+
 
 ## License
 
