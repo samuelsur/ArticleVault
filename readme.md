@@ -5,7 +5,7 @@ An automated system for extracting structured content from web articles and conv
 ## Why ArticleVault?
 
 In my company there is a need to archive and store some web articles in a 
-structured format. Docx document format was choden as most of the people 
+structured format. Docx document format was chosen as most of the people 
 are familiar with it. 
 
 The task of extracting is simple when performed manually, however, 
