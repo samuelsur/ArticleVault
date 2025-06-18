@@ -1,0 +1,16 @@
+services:
+  article-scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
+      interval: 1m
+      timeout: 5s
+      retries: 3
+      start_period: 10s

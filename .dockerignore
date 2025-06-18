@@ -1,0 +1,42 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local development settings
+.env
+.env.local
+
+# Downloaded temporary files
+temp_images/
+article_with_border.docx
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# System files
+.DS_Store
