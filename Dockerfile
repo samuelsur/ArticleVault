@@ -35,12 +35,5 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Switch to non-root user
 USER appuser
 
-# Expose the port the app runs on
-EXPOSE 8501
-
-# Configure a health check for the container
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl --fail http://localhost:8501/_stcore/health || exit 1
-
 # Command to run the application
 CMD ["streamlit", "run", "app.py"]
