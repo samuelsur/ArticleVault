@@ -1,10 +1,21 @@
-# Article Scraper
+# ArticleVault
 
 An automated system for extracting structured content from web articles and converting to formatted DOCX documents with preserved image positioning.
+
+## Why ArticleVault?
+
+In my company there is a need to archive and store some web articles in a 
+structured format. Docx document format was choden as most of the people 
+are familiar with it. 
+
+The task of extracting is simple when performed manually, however, 
+it is repetitive. Thus ArticleVault was created.
 
 ## Overview
 
 Article Scraper implements a robust extraction pipeline that leverages state-of-the-art language models to parse web articles into structured data objects. The system processes both textual content and visual elements while maintaining their semantic relationships and relative positioning, then renders the extracted content into standardized document formats.
+
+The application features a user-friendly **web interface built with Streamlit**, allowing users to easily input article URLs, view extraction progress in real-time, and download the resulting DOCX documents. Streamlit provides an interactive dashboard experience where users can monitor the extraction process and access their downloaded articles.
 
 ## Technical Architecture & Implementation Pipeline
 
@@ -34,17 +45,22 @@ The system implements a multi-stage content processing pipeline with the followi
    - Implements precise positioning of text and images
    - Applies formatting and styling rules for professional output
 
-6. **Error Handling & Validation**
+6. **Interactive Web Interface**
+   - Built with **Streamlit** for intuitive user experience
+   - Real-time progress updates and status notifications
+   - Preview capabilities for extracted content
+   - Integrated download functionality for generated documents
+
+7. **Error Handling & Validation**
    - Content validation to ensure extraction completeness
    - Fallback mechanisms for handling extraction challenges
-   - Comprehensive error reporting
+   - Comprehensive error reporting with user-friendly messages
 
 ## Configuration & Deployment
 
+The application runs as a Streamlit web app, providing an interactive interface accessible through your browser. There are two ways to run the application: directly from the command line interface or inside a Docker container.
 
-There are two ways how to run the application, the first one is directly from the command line interface, the second one is to run it inside a Docker container.
-
-You will need to configure the environment with the required API credentials, which are stored in a `.env` file. 
+You will need to configure the environment with the required API credentials, which are stored in a `.env` file.
 
 ### Run through Command Line Interface
 1. Clone the repository
@@ -52,11 +68,13 @@ You will need to configure the environment with the required API credentials, wh
 ```bash 
 pip install -r requirements.txt
 ```
-4. Run the application using the command line interface or as a Python module.
+4. Start the Streamlit web application:
 
 ```bash
 streamlit run app.py
 ```
+
+This will launch the Streamlit server and automatically open a browser window with the application running at http://localhost:8501.
 
 ### Run using Docker Container
 1. Clone the repository
@@ -136,6 +154,7 @@ This containerization approach ensures:
 - [ ] Implement option for user to select size of the images in the document as well as other formatting options
 - [ ] Implement option for user to select the format of the document (PDF, DOCX, etc.)
 - [ ] Implement option for user to add extra prompts to the AI model to improve the extraction quality
+- [ ] Tests
 
 
 ## License
