@@ -8,7 +8,12 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     software-properties-common \
-    && rm -rf /var/lib/apt/lists/*
+    wget gnupg ca-certificates fonts-liberation \
+    libx11-xcb1 libxcb1 libxcomposite1 libxdamage1 libxrandr2 \
+    libgbm1 libgtk-3-0 libxss1 libasound2 libnss3 \
+    libatk-bridge2.0-0 libatk1.0-0 libcups2 \
+    libpangocairo-1.0-0 libcairo-gobject2 libgdk-pixbuf2.0-0 \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user to run the application
 RUN groupadd -g 1000 appuser && \
@@ -34,6 +39,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Switch to non-root user
 USER appuser
+
+# Install Playwright browsers as the non-root user
+RUN playwright install chromium
 
 # Command to run the application
 CMD ["streamlit", "run", "app.py"]
