@@ -1,20 +1,65 @@
 import streamlit as st
 import time
 from scraper import ArticleDownloader
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
 
-# main function to run the Streamlit app
-# This function initializes the app, sets up the layout, and handles user input for article extraction
-def main():
-    # Initialize the ArticleDownloader instance
-    article_downloader = ArticleDownloader()
-    # Set up the Streamlit page configuration
+
+def authenticate_user():
+    with open(".streamlit/config.yaml") as file:
+        config = yaml.load(file, Loader=SafeLoader)
+
+    authenticator = stauth.Authenticate(
+        config['credentials'],
+        config['cookie']['name'],
+        config['cookie']['key'],
+        config['cookie']['expiry_days']
+    )
+    
+    
+    authenticator.login(location = 'sidebar')
+    
+    auth_state = st.session_state.get("authentication_status")
+
+    if auth_state:
+        # User is connected
+        authenticator.logout('Logout', 'sidebar')
+    elif auth_state == False:
+        st.error('Username or password is incorrect')
+        # Stop the rendering if the user isn't connected
+        st.stop()
+    elif auth_state is None:
+        st.warning('Please enter your username and password')
+        # Stop the rendering if the user isn't connected
+        st.stop()
+
+    return authenticator
+
+
+
+def set_layout():
     st.set_page_config(
         page_title="Article Extractor",
         page_icon="📰",
         layout="centered",  # Centered layout for better aesthetics
     )
+    st.sidebar.header("Article Extractor")
     # Set the title of the app
     st.title("Article Extractor")
+
+
+
+# main function to run the Streamlit app
+# This function initializes the app, sets up the layout, and handles user input for article extraction
+def main():
+    # Set up the Streamlit page configuration
+    set_layout()
+    # Authenticate the user
+    authenticator = authenticate_user()
+    # Initialize the ArticleDownloader instance
+    article_downloader = ArticleDownloader()
+
 
     # App introduction
     st.markdown("""

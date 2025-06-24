@@ -113,6 +113,15 @@ The example of the `.env` file is provided in the repository as `.env.example`. 
 
 When running with Docker, the `.env` file is automatically loaded via the `env_file` configuration in docker-compose.yml.
 
+### Configure the authentication for the Streamlit app
+This app implements an authentication mechanism using opensource [Streamlit-Authenticator](
+   https://github.com/mkhorasani/Streamlit-Authenticator). 
+Please refer to the repository for the detailed instructions on how to configure the authentication. The example configuration file is provided in our repository 
+as `.streamlit/config.yaml.example`. Make sure to rename it to `config.yaml` and fill in your credentials. Don't forget to hash your passwords using the `stauth.Hasher` utility provided by the Streamlit-Authenticator library. 
+
+We do not want other users to access our web application, then the ones we configure in the `config.yaml` file. Thus we do not need users to be able to register themselves. However, if you want to allow users to register themselves, you can implement a registration mechanism using the Streamlit-Authenticator library.
+
+
 ## System Architecture
 
 ```
@@ -127,6 +136,9 @@ article_scraper/
 ├── Dockerfile              # Container definition for Docker deployment
 ├── docker-compose.yml      # Docker Compose configuration
 ├── .dockerignore           # Files to exclude from Docker build
+├── .streamlit/             # Streamlit configuration files
+│   ├── config.yaml         # Authentication 
+│   └── config.toml         # Streamlit theme configuration
 └── README.md               # Documentation
 ```
 
