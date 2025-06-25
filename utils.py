@@ -67,13 +67,14 @@ class MSWord:
     
 
     @staticmethod
-    def create_page_bordered_docx(filename, content, border_color=(150, 42, 46), 
+    def create_page_bordered_docx(uuid, filename, content, url, border_color=(150, 42, 46), 
                                 border_width=200, header=None, footer=None, 
                                 progress_callback=None):
         """
         Create a DOCX file with a border around the entire page with optional header and footer.
         
         Args:
+            uuid (str): Unique identifier for the extraction run
             filename (str): Path where to save the document
             content (dict): Document content structure
             border_color (tuple): RGB color tuple for border (default: brown)
@@ -83,7 +84,9 @@ class MSWord:
             progress_callback (callable, optional): Callback function to report progress
         """
         progress_callback = MSWord._get_callback(progress_callback)
-        
+        # temp/uuid/temp_images
+        image_session_path = f"temp/{uuid}/temp_images"
+        docx_session_path = f"temp/{uuid}/{filename}"
         # Download images if provided
         title = content.get("title")
         image_urls = []
@@ -94,7 +97,7 @@ class MSWord:
         # download the images
         if image_urls:
             progress_callback("Downloading images...", 65)
-            images = MSWord._temp_download_images(image_urls, progress_callback=progress_callback)
+            images = MSWord._temp_download_images(images=image_urls, download_path=image_session_path, progress_callback=progress_callback)
             progress_callback("Images downloaded successfully", 75)
         else:
             images = {}
@@ -125,6 +128,24 @@ class MSWord:
         title_run.bold = True
         title_run.font.size = Pt(16)
         title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # date (if available)
+        date = content.get("date", "")
+        if date:
+            date_paragraph = doc.add_paragraph()
+            date_run = date_paragraph.add_run(date)
+            date_run.italic = True
+            date_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            date_paragraph.space_after = Pt(6)
+
+
+        # url
+        url_paragraph = doc.add_paragraph()
+        url_run = url_paragraph.add_run(url)
+        url_run.italic = True
+        url_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        url_paragraph.space_after = Pt(12)  # Add space after the URL paragraph
+        
         
         # Process content blocks
         total_blocks = len(content["content_blocks"])
@@ -252,7 +273,7 @@ class MSWord:
 
         if image_urls:
             # Clean up temporary images after adding them to the document
-            MSWord._temp_delete_images()
+            MSWord._temp_delete_images(download_path=image_session_path)
         
         # Add footer if provided
         if footer:
@@ -268,7 +289,7 @@ class MSWord:
         progress_callback("Saving document...", 95)
             
         # Save the document
-        doc.save(filename)
+        doc.save(docx_session_path)
         
         progress_callback("Document saved successfully", 98)
             

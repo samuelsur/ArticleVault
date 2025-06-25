@@ -33,6 +33,7 @@ ENV/
 # Downloaded temporary files
 temp_images/
 article_with_border.docx
+temp/
 
 # Docker files
 Dockerfile

@@ -48,6 +48,7 @@ venv.bak/
 
 # Local Files
 temp_images/
+temp/
 *.log
 *.docx
 *.tmp
@@ -58,7 +59,5 @@ temp_images/
 *.jpg
 *.docx
 
-
-temp_images/
 
 config.yaml

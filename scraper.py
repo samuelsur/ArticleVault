@@ -5,11 +5,13 @@ from scrapegraphai.utils import prettify_exec_info
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from utils import MSWord, Article, ContentBlock
+import uuid
 
 
 class ArticleDownloader:
     _instance = None
 
+    # Singleton pattern to ensure only one instance of ArticleDownloader exists
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(ArticleDownloader, cls).__new__(cls)
@@ -85,12 +87,14 @@ class ArticleDownloader:
         return result
     
 
-    def create_docx(self, result: Article, progress_callback=None):
+    def create_docx(self, result: Article, url, uuid, progress_callback=None):
         """
         Create a DOCX file with the extracted article content.
         
         Args:
             result (Article): The extracted article data.
+            url (str): The URL of the article, used for context.
+            uuid (str): Unique identifier for the extraction run.
             progress_callback (callable, optional): Callback function to report progress.
         Returns:
             str: The filename of the created DOCX file where the article is saved.
@@ -99,8 +103,10 @@ class ArticleDownloader:
         
         docx_filename = "article_with_border.docx"
         MSWord.create_page_bordered_docx(
+            uuid=uuid,
             filename=docx_filename,
             content=result,
+            url = url,
             border_color=(150, 42, 46),  # Brown color
             border_width=200,  # Border width in points
             progress_callback=progress_callback
@@ -161,7 +167,7 @@ class ArticleDownloader:
 
         
 
-    def run(self, url: str, progress_callback=None) -> tuple[str, str]:
+    def run(self, unique_id, url: str, progress_callback=None) -> tuple[str, str]:
         """
         Run the scraper and create a DOCX file with the extracted article.
         
@@ -174,6 +180,7 @@ class ArticleDownloader:
             str: The extracted article data.
             str: The absolute path to the created DOCX file.
         """
+        # Each extraction run has a unique ID
         progress_callback = self._get_callback(progress_callback)
         progress_callback("Initializing article extraction...", 10)
         
@@ -192,10 +199,10 @@ class ArticleDownloader:
         # Generate DOCX file
         progress_callback("Creating DOCX document...", 60)
         
-        filename = self.create_docx(result, progress_callback)
+        filename = self.create_docx(result, url, unique_id, progress_callback)
         progress_callback("DOCX document created successfully", 90)
         
-        path = os.path.abspath(filename)
+        path = f"temp/{unique_id}/{filename}"
         progress_callback("Process complete!", 100)
         
         return filename, result, path

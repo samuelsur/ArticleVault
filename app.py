@@ -4,7 +4,36 @@ from scraper import ArticleDownloader
 import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
+import hashlib
 
+def get_user_hash(username: str) -> str:
+    """
+    Generate a SHA-256 hash for the given username.
+    
+    This function is used to create a unique hash of the username, so 
+    each user can have a unique folder for their extracted articles.
+
+    This is easier solution than using the UUID library, because 
+    uuid would require regular deletion of old folder.
+    """
+    return hashlib.sha256(username.encode()).hexdigest()
+
+def get_article_downloader():
+    """
+    Initialize and return an instance of ArticleDownloader.
+    
+    This function is used to create a singleton instance 
+    of the ArticleDownloader class. This is to prevent
+    the re-initialization of the downloader
+    every time the Streamlit app reruns, which can be
+    resource-intensive and unnecessary.
+
+    Returns:
+        ArticleDownloader: An instance of the ArticleDownloader class.
+    """
+    if "article_downloader" not in st.session_state:
+        st.session_state.article_downloader = ArticleDownloader()
+    return st.session_state.article_downloader
 
 def authenticate_user():
     with open(".streamlit/config.yaml") as file:
@@ -16,7 +45,7 @@ def authenticate_user():
         config['cookie']['key'],
         config['cookie']['expiry_days']
     )
-    
+        
     
     authenticator.login(location = 'sidebar')
     
@@ -57,8 +86,8 @@ def main():
     set_layout()
     # Authenticate the user
     authenticator = authenticate_user()
-    # Initialize the ArticleDownloader instance
-    article_downloader = ArticleDownloader()
+    # Initialize the ArticleDownloader singleton instance
+    article_downloader = get_article_downloader()
 
 
     # App introduction
@@ -91,6 +120,7 @@ def main():
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.session_state.extracting = False
+        st.session_state["url_input"] = ""  # Clear the input text
 
     user_input = st.text_input(
         "Enter the URL of the article you want to extract:",
@@ -145,7 +175,7 @@ def main():
             st.download_button(
                 label="Download DOCX",
                 data=open(path, "rb").read(),
-                file_name="extracted_article.docx",
+                file_name=f"extracted_article.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 key="download_button",
                 use_container_width=True
@@ -164,8 +194,8 @@ def main():
             
             try:
                 # Run the extraction with progress updates using a lambda for the callback
-                _, result, path = article_downloader.run(
-                    user_input, 
+                _, result, path = article_downloader.run(unique_id=get_user_hash(st.session_state.get("username")),
+                    url = user_input, 
                     progress_callback=lambda message, percent: update_progress(message, percent, progress_bar, status_placeholder)
                 )
                 
