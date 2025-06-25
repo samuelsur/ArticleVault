@@ -6,6 +6,8 @@ import yaml
 from yaml.loader import SafeLoader
 import hashlib
 
+
+
 def get_user_hash(username: str) -> str:
     """
     Generate a SHA-256 hash for the given username.
@@ -38,6 +40,13 @@ def get_article_downloader():
 def authenticate_user():
     with open(".streamlit/config.yaml") as file:
         config = yaml.load(file, Loader=SafeLoader)
+
+    # If you want to create or update the passwords in the config file,
+    # you can uncomment the following lines:
+    # stauth.Hasher.hash_passwords(config['credentials'])
+    # # write the hashed passwords back to the config
+    # with open(".streamlit/config.yaml", "w") as file:
+    #     yaml.dump(config, file, default_flow_style=False)
 
     authenticator = stauth.Authenticate(
         config['credentials'],

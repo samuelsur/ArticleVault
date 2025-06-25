@@ -1,7 +1,9 @@
 Pillow==11.2.1
 pydantic==2.11.7
-python-dotenv==1.1.0
+python-dotenv==1.1.1
 python_docx==1.1.2
+PyYAML==6.0.2
 Requests==2.32.4
-scrapegraphai==1.57.0
+scrapegraphai==1.59.0
 streamlit==1.45.1
+streamlit_authenticator==0.4.2

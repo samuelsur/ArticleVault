@@ -6,6 +6,8 @@ services:
     image: article-scraper
     ports:
       - "8501:8501"
+    volumes:
+      - ./.streamlit/config.yaml:/app/.streamlit/config.yaml
     env_file:
       - .env
     restart: unless-stopped

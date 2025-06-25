@@ -5,7 +5,7 @@ from scrapegraphai.utils import prettify_exec_info
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from utils import MSWord, Article, ContentBlock
-import uuid
+from scrapegraphai.utils import prettify_exec_info
 
 
 class ArticleDownloader:
@@ -84,6 +84,12 @@ class ArticleDownloader:
             )
 
         result = smart_scraper_graph.run()
+        
+        graph_exec_info = smart_scraper_graph.get_execution_info()
+        total_price_usd = next((node['total_cost_USD'] for node in graph_exec_info if node['node_name'] == 'TOTAL RESULT'), None)
+        # print(f'graph_exec_info: {graph_exec_info}')
+        # print(prettify_exec_info(graph_exec_info))
+        print(f'Total price of the run {total_price_usd}')
         return result
     
 
