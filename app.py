@@ -5,7 +5,11 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 import hashlib
+from logging_config import setup_logger, setup_file_logger
 
+# Set up logging - both console and file
+logger = setup_logger(__name__)
+file_logger = setup_file_logger(__name__, "logs/article_extractor.log")
 
 
 def get_user_hash(username: str) -> str:
@@ -83,6 +87,10 @@ def set_layout():
         layout="centered",  # Centered layout for better aesthetics
     )
     st.sidebar.header("Article Extractor")
+    name = st.session_state.get("username")
+    if name is None:
+        name = "Guest"  # Default name if not set
+    st.sidebar.markdown(f"Hello, {name}!") # Display the username in the sidebar
     # Set the title of the app
     st.title("Article Extractor")
 
@@ -127,7 +135,9 @@ def main():
     def clear_results(): # Clear the results and reset the state
         # Clear all session state
         for key in list(st.session_state.keys()):
-            del st.session_state[key]
+
+            if key in ["extracting", "result", "path", "url_input"]:
+                del st.session_state[key]
         st.session_state.extracting = False
         st.session_state["url_input"] = ""  # Clear the input text
 
@@ -161,6 +171,15 @@ def main():
 
     # Only show results if we have them
     if st.session_state.get("result") and st.session_state.get("path"):
+        user_hash = get_user_hash(st.session_state.get("username"))
+        expected_dir = f"temp/{user_hash}"
+        # Ensure the expected dir and session_state.path match
+        if path.startswith(expected_dir):
+            st.session_state.path = path #starts with means 
+        else:
+            st.session_state.path = None
+            st.session_state.result = None
+            st.rerun()
         result = st.session_state.result
         path = st.session_state.path
         
@@ -202,11 +221,22 @@ def main():
             update_progress("Starting article extraction...", 5, progress_bar, status_placeholder)
             
             try:
+                user_hash = get_user_hash(st.session_state.get("username"))
+                username = st.session_state.get("username", "unknown")
+                
+                # Log the start of extraction with user context
+                logger.info(f"User '{username}' (hash: {user_hash}) starting extraction for URL: {user_input}")
+                file_logger.info(f"User '{username}' (hash: {user_hash}) starting extraction for URL: {user_input}")
+                
                 # Run the extraction with progress updates using a lambda for the callback
-                _, result, path = article_downloader.run(unique_id=get_user_hash(st.session_state.get("username")),
+                _, result, path = article_downloader.run(unique_id=user_hash,
                     url = user_input, 
                     progress_callback=lambda message, percent: update_progress(message, percent, progress_bar, status_placeholder)
                 )
+                
+                # Log successful extraction
+                logger.info(f"User '{username}' (hash: {user_hash}) successfully extracted article: {result.get('title', 'Unknown title')}")
+                file_logger.info(f"User '{username}' (hash: {user_hash}) successfully extracted article: {result.get('title', 'Unknown title')}")
                 
                 # Complete the progress bar
                 update_progress("Article extracted successfully!", 100, progress_bar, status_placeholder)
@@ -219,6 +249,13 @@ def main():
                 st.rerun()
                 
             except Exception as e:
+                user_hash = get_user_hash(st.session_state.get("username"))
+                username = st.session_state.get("username", "unknown")
+                
+                # Log the error with full user context
+                logger.error(f"User '{username}' (hash: {user_hash}) encountered error extracting URL '{user_input}': {str(e)}", exc_info=True)
+                file_logger.error(f"User '{username}' (hash: {user_hash}) encountered error extracting URL '{user_input}': {str(e)}", exc_info=True)
+                
                 st.error(f"Error during extraction: {str(e)}")
                 update_progress(f"Error: {str(e)}", 100, progress_bar, status_placeholder)
                 # Button to clear the input/output (centered)

@@ -6,6 +6,11 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from utils import MSWord, Article, ContentBlock
 from scrapegraphai.utils import prettify_exec_info
+from logging_config import setup_logger, setup_file_logger
+
+# Set up logging
+logger = setup_logger(__name__)
+file_logger = setup_file_logger(__name__, "logs/article_extractor.log")
 
 
 class ArticleDownloader:
@@ -66,15 +71,20 @@ class ArticleDownloader:
             return lambda message, percent: None  # No-op function
         return callback
 
-    def scrape(self, url: str) -> dict:
+    def scrape(self, url: str, user_context: str = None) -> dict:
         """
         Scrape the article from the given URL using SmartScraperGraph.
         Args:
             url (str): The URL of the article to scrape.
+            user_context (str, optional): User context for logging purposes.
         Returns:
             dict: The extracted article data in a structured format defined 
             by the Article model.
         """
+        context_info = f" for {user_context}" if user_context else ""
+        logger.info(f"Starting article scraping{context_info} from URL: {url}")
+        file_logger.info(f"Starting article scraping{context_info} from URL: {url}")
+        
         smart_scraper_graph = SmartScraperGraph(
             prompt = self.default_prompt,
             # also accepts a string with the already downloaded HTML code
@@ -87,13 +97,14 @@ class ArticleDownloader:
         
         graph_exec_info = smart_scraper_graph.get_execution_info()
         total_price_usd = next((node['total_cost_USD'] for node in graph_exec_info if node['node_name'] == 'TOTAL RESULT'), None)
-        # print(f'graph_exec_info: {graph_exec_info}')
-        # print(prettify_exec_info(graph_exec_info))
-        print(f'Total price of the run {total_price_usd}')
+
+        cost_msg = f'Total price of the run{context_info}: {total_price_usd} USD'
+        logger.info(cost_msg)
+        file_logger.info(cost_msg)
         return result
     
 
-    def create_docx(self, result: Article, url, uuid, progress_callback=None):
+    def create_docx(self, result: Article, url, uuid, progress_callback=None, user_context=None):
         """
         Create a DOCX file with the extracted article content.
         
@@ -102,6 +113,7 @@ class ArticleDownloader:
             url (str): The URL of the article, used for context.
             uuid (str): Unique identifier for the extraction run.
             progress_callback (callable, optional): Callback function to report progress.
+            user_context (str, optional): User context for logging purposes.
         Returns:
             str: The filename of the created DOCX file where the article is saved.
         """
@@ -115,13 +127,14 @@ class ArticleDownloader:
             url = url,
             border_color=(150, 42, 46),  # Brown color
             border_width=200,  # Border width in points
-            progress_callback=progress_callback
+            progress_callback=progress_callback,
+            user_context=user_context
             # header=f"Author: {result.author}" if result.author else None,
             # footer=f"Date: {result.date}" if result.date else None
         )
         return docx_filename
 
-    def check_structure(self, result: dict):
+    def check_structure(self, result: dict, user_context: str = None):
         """
         The output of the model is JSON, so we can check if the structure is correct.
 
@@ -143,11 +156,14 @@ class ArticleDownloader:
         }
         Args:
             result (dict): The extracted article data to validate.
+            user_context (str, optional): User context for logging purposes.
         Returns:
             bool: True if the structure is valid, raises ValueError otherwise.
         Raises:
             ValueError: If the structure does not match the expected format.
         """
+        context_info = f" for {user_context}" if user_context else ""
+        
         required_keys = {'title', 'date', 'author', 'content_blocks'}
         if not isinstance(result, dict):
             raise ValueError("Result must be a dictionary")
@@ -178,6 +194,7 @@ class ArticleDownloader:
         Run the scraper and create a DOCX file with the extracted article.
         
         Args:
+            unique_id (str): Unique identifier for the user/extraction run.
             url (str): The URL of the article to scrape.
             progress_callback (callable, optional): Callback function to report progress.
                 The function should accept a message string and a percentage float.
@@ -188,28 +205,36 @@ class ArticleDownloader:
         """
         # Each extraction run has a unique ID
         progress_callback = self._get_callback(progress_callback)
+        user_context = f"user_hash:{unique_id}"
+        
         progress_callback("Initializing article extraction...", 10)
         
         # Extract article content
-        result = self.scrape(url)
+        result = self.scrape(url, user_context)
         progress_callback("Article content extracted successfully", 40)
         
         try:
-            self.check_structure(result)
+            self.check_structure(result, user_context)
             progress_callback("Article structure validated", 50)
         except ValueError as e:
-            print(f"Error in result structure: {e}")
+            error_msg = f"Invalid result structure for {user_context}: {e}"
+            logger.error(error_msg)
+            file_logger.error(error_msg)
             progress_callback(f"Error: {e}", 100)
             raise ValueError(f"Invalid result structure: {e}")
         
         # Generate DOCX file
         progress_callback("Creating DOCX document...", 60)
         
-        filename = self.create_docx(result, url, unique_id, progress_callback)
+        filename = self.create_docx(result, url, unique_id, progress_callback, user_context)
         progress_callback("DOCX document created successfully", 90)
         
         path = f"temp/{unique_id}/{filename}"
         progress_callback("Process complete!", 100)
+        
+        success_msg = f"Successfully completed extraction for {user_context}, file saved to: {path}"
+        logger.info(success_msg)
+        file_logger.info(success_msg)
         
         return filename, result, path
 
